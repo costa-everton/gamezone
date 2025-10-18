@@ -544,7 +544,8 @@ let gameState = {
     phase: 1,
     maxLevel: 5,
     scorePerLevel: 100,
-    lastPhaseScore: 0
+    musicWasPlaying: false, // Rastrear se a música estava tocando antes da pausa
+    lastEnemySpawn: 0 // Controle de spawn de naves inimigas
 };
 
 // Classe da Nave
@@ -1539,17 +1540,467 @@ class Asteroid {
     }
 }
 
+// Classe da Nave Inimiga
+class EnemyShip {
+    constructor(x, y, type = 'normal') {
+        this.x = x;
+        this.y = y;
+        this.width = type === 'boss' ? 80 : 25;
+        this.height = type === 'boss' ? 50 : 30;
+        this.type = type;
+        this.speed = type === 'boss' ? 0.5 : 1;
+        this.dx = type === 'boss' ? 1 : (Math.random() - 0.5) * 2;
+        this.dy = 0;
+        this.health = type === 'boss' ? 20 : 2;
+        this.maxHealth = this.health;
+        this.lastShot = 0;
+        this.shootInterval = type === 'boss' ? 1000 : 2000;
+        this.direction = Math.random() > 0.5 ? 1 : -1;
+        this.oscillation = 0;
+        this.oscillationSpeed = 0.02;
+        this.oscillationAmplitude = 50;
+    }
+
+    update() {
+        // Movimento horizontal com oscilação
+        this.oscillation += this.oscillationSpeed;
+        this.x += this.dx * this.direction;
+        
+        // Oscilação vertical sutil
+        this.y += Math.sin(this.oscillation) * 0.5;
+        
+        // Inverter direção nas bordas
+        if (this.x <= 0 || this.x >= canvas.width - this.width) {
+            this.direction *= -1;
+        }
+        
+        // Manter dentro dos limites
+        this.x = Math.max(0, Math.min(canvas.width - this.width, this.x));
+        this.y = Math.max(0, Math.min(canvas.height - this.height, this.y));
+    }
+
+    shoot() {
+        const now = Date.now();
+        if (now - this.lastShot > this.shootInterval) {
+            this.lastShot = now;
+            return new EnemyBullet(
+                this.x + this.width / 2,
+                this.y + this.height,
+                this.type === 'boss' ? 2 : 1
+            );
+        }
+        return null;
+    }
+
+    takeDamage(damage) {
+        this.health -= damage;
+        return this.health <= 0;
+    }
+
+    draw() {
+        ctx.save();
+        ctx.translate(this.x + this.width / 2, this.y + this.height / 2);
+        
+        if (this.type === 'boss') {
+            // Desenhar nave chefe
+            ctx.fillStyle = '#ff4444';
+            ctx.fillRect(-this.width / 2, -this.height / 2, this.width, this.height);
+            
+            // Detalhes da nave chefe
+            ctx.fillStyle = '#ff6666';
+            ctx.fillRect(-this.width / 2 + 5, -this.height / 2 + 5, this.width - 10, this.height - 10);
+            
+            // Canhões
+            ctx.fillStyle = '#ff0000';
+            ctx.fillRect(-this.width / 2 + 10, -this.height / 2 - 5, 15, 8);
+            ctx.fillRect(this.width / 2 - 25, -this.height / 2 - 5, 15, 8);
+            
+            // Barra de vida da nave chefe
+            const healthBarWidth = this.width;
+            const healthBarHeight = 6;
+            const healthPercent = this.health / this.maxHealth;
+            
+            ctx.fillStyle = '#ff0000';
+            ctx.fillRect(-healthBarWidth / 2, -this.height / 2 - 15, healthBarWidth, healthBarHeight);
+            ctx.fillStyle = '#00ff00';
+            ctx.fillRect(-healthBarWidth / 2, -this.height / 2 - 15, healthBarWidth * healthPercent, healthBarHeight);
+        } else {
+            // Desenhar nave inimiga normal
+            ctx.fillStyle = '#ff6666';
+            ctx.fillRect(-this.width / 2, -this.height / 2, this.width, this.height);
+            
+            // Detalhes
+            ctx.fillStyle = '#ff4444';
+            ctx.fillRect(-this.width / 2 + 3, -this.height / 2 + 3, this.width - 6, this.height - 6);
+            
+            // Canhão
+            ctx.fillStyle = '#ff0000';
+            ctx.fillRect(-2, this.height / 2 - 5, 4, 8);
+        }
+        
+        ctx.restore();
+    }
+}
+
+// Classe da Bala Inimiga
+class EnemyBullet {
+    constructor(x, y, damage = 1) {
+        this.x = x;
+        this.y = y;
+        this.width = 4;
+        this.height = 8;
+        this.speed = 3;
+        this.damage = damage;
+    }
+
+    update() {
+        this.y += this.speed;
+    }
+
+    draw() {
+        ctx.fillStyle = '#ff4444';
+        ctx.fillRect(this.x - this.width / 2, this.y, this.width, this.height);
+        
+        // Efeito de brilho
+        ctx.fillStyle = '#ff6666';
+        ctx.fillRect(this.x - this.width / 2 + 1, this.y + 1, this.width - 2, this.height - 2);
+    }
+}
+
 // Arrays para armazenar objetos do jogo
 let ship;
 let bullets = [];
 let asteroids = [];
+let enemyShips = [];
+let enemyBullets = [];
 let keys = {};
+
+// Sistema de fundo dinâmico
+let backgroundElements = [];
+let backgroundStars = [];
+let backgroundPlanets = [];
+let backgroundNebulas = [];
+let backgroundAsteroids = [];
+
+// Classe para estrelas de fundo
+class BackgroundStar {
+    constructor() {
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * canvas.height;
+        this.size = Math.random() * 2 + 0.5;
+        this.speed = Math.random() * 0.5 + 0.1;
+        this.opacity = Math.random() * 0.8 + 0.2;
+        this.twinkleSpeed = Math.random() * 0.02 + 0.01;
+        this.twinklePhase = Math.random() * Math.PI * 2;
+    }
+
+    update() {
+        this.y += this.speed;
+        this.twinklePhase += this.twinkleSpeed;
+        
+        if (this.y > canvas.height) {
+            this.y = -10;
+            this.x = Math.random() * canvas.width;
+        }
+    }
+
+    draw() {
+        ctx.save();
+        const twinkle = Math.sin(this.twinklePhase) * 0.3 + 0.7;
+        ctx.globalAlpha = this.opacity * twinkle;
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+    }
+}
+
+// Classe para planetas de fundo
+class BackgroundPlanet {
+    constructor(level) {
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * canvas.height;
+        this.size = Math.random() * 30 + 20;
+        this.speed = Math.random() * 0.3 + 0.1;
+        this.opacity = Math.random() * 0.3 + 0.1;
+        this.phase = level;
+        this.rotation = 0;
+        this.rotationSpeed = Math.random() * 0.01 + 0.005;
+        this.colors = this.getPlanetColors(level);
+    }
+
+    getPlanetColors(level) {
+        const colorSets = [
+            ['#4a4a4a', '#6a6a6a', '#8a8a8a'], // Cinza - Fase 1
+            ['#2d4a2d', '#4a6a4a', '#6a8a6a'], // Verde - Fase 2
+            ['#4a2d4a', '#6a4a6a', '#8a6a8a'], // Roxo - Fase 3
+            ['#2d2d4a', '#4a4a6a', '#6a6a8a'], // Azul - Fase 4
+            ['#4a2d2d', '#6a4a4a', '#8a6a6a']  // Vermelho - Fase 5+
+        ];
+        return colorSets[Math.min(level - 1, 4)];
+    }
+
+    update() {
+        this.y += this.speed;
+        this.rotation += this.rotationSpeed;
+        
+        if (this.y > canvas.height + this.size) {
+            this.y = -this.size;
+            this.x = Math.random() * canvas.width;
+        }
+    }
+
+    draw() {
+        ctx.save();
+        ctx.globalAlpha = this.opacity;
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.rotation);
+        
+        // Gradiente do planeta
+        const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, this.size);
+        gradient.addColorStop(0, this.colors[0]);
+        gradient.addColorStop(0.5, this.colors[1]);
+        gradient.addColorStop(1, this.colors[2]);
+        
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(0, 0, this.size, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Detalhes do planeta
+        ctx.strokeStyle = this.colors[2];
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(0, 0, this.size * 0.8, 0, Math.PI * 2);
+        ctx.stroke();
+        
+        ctx.restore();
+    }
+}
+
+// Classe para nebulosas de fundo
+class BackgroundNebula {
+    constructor(level) {
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * canvas.height;
+        this.width = Math.random() * 100 + 50;
+        this.height = Math.random() * 60 + 30;
+        this.speed = Math.random() * 0.2 + 0.05;
+        this.opacity = Math.random() * 0.15 + 0.05;
+        this.phase = level;
+        this.colors = this.getNebulaColors(level);
+        this.pulseSpeed = Math.random() * 0.01 + 0.005;
+        this.pulsePhase = Math.random() * Math.PI * 2;
+    }
+
+    getNebulaColors(level) {
+        const colorSets = [
+            ['#1a1a2e', '#16213e'], // Azul escuro - Fase 1
+            ['#0f3460', '#533483'], // Azul/roxo - Fase 2
+            ['#533483', '#e94560'], // Roxo/rosa - Fase 3
+            ['#e94560', '#f39c12'], // Rosa/laranja - Fase 4
+            ['#f39c12', '#e74c3c']  // Laranja/vermelho - Fase 5+
+        ];
+        return colorSets[Math.min(level - 1, 4)];
+    }
+
+    update() {
+        this.y += this.speed;
+        this.pulsePhase += this.pulseSpeed;
+        
+        if (this.y > canvas.height + this.height) {
+            this.y = -this.height;
+            this.x = Math.random() * canvas.width;
+        }
+    }
+
+    draw() {
+        ctx.save();
+        const pulse = Math.sin(this.pulsePhase) * 0.2 + 0.8;
+        ctx.globalAlpha = this.opacity * pulse;
+        
+        // Gradiente da nebulosa
+        const gradient = ctx.createLinearGradient(this.x, this.y, this.x + this.width, this.y + this.height);
+        gradient.addColorStop(0, this.colors[0]);
+        gradient.addColorStop(0.5, this.colors[1]);
+        gradient.addColorStop(1, this.colors[0]);
+        
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.ellipse(this.x + this.width/2, this.y + this.height/2, this.width/2, this.height/2, 0, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.restore();
+    }
+}
+
+// Classe para asteroides de fundo (decorativos)
+class BackgroundAsteroid {
+    constructor(level) {
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * canvas.height;
+        this.size = Math.random() * 8 + 4;
+        this.speed = Math.random() * 0.4 + 0.1;
+        this.opacity = Math.random() * 0.2 + 0.1;
+        this.rotation = 0;
+        this.rotationSpeed = Math.random() * 0.02 + 0.01;
+        this.phase = level;
+        this.color = this.getAsteroidColor(level);
+    }
+
+    getAsteroidColor(level) {
+        const colors = [
+            '#4a4a4a', // Cinza - Fase 1
+            '#2d4a2d', // Verde - Fase 2
+            '#4a2d4a', // Roxo - Fase 3
+            '#2d2d4a', // Azul - Fase 4
+            '#4a2d2d'  // Vermelho - Fase 5+
+        ];
+        return colors[Math.min(level - 1, 4)];
+    }
+
+    update() {
+        this.y += this.speed;
+        this.rotation += this.rotationSpeed;
+        
+        if (this.y > canvas.height + this.size) {
+            this.y = -this.size;
+            this.x = Math.random() * canvas.width;
+        }
+    }
+
+    draw() {
+        ctx.save();
+        ctx.globalAlpha = this.opacity;
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.rotation);
+        
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(0, 0, this.size, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Detalhes do asteroide
+        ctx.strokeStyle = this.color;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(0, 0, this.size * 0.7, 0, Math.PI * 2);
+        ctx.stroke();
+        
+        ctx.restore();
+    }
+}
+
+// Funções para gerenciar fundo dinâmico
+function initBackground() {
+    // Limpar arrays de fundo
+    backgroundStars = [];
+    backgroundPlanets = [];
+    backgroundNebulas = [];
+    backgroundAsteroids = [];
+    
+    // Criar estrelas (sempre presentes)
+    for (let i = 0; i < 50; i++) {
+        backgroundStars.push(new BackgroundStar());
+    }
+    
+    // Criar elementos baseados na fase atual
+    updateBackgroundForPhase(gameState.phase);
+}
+
+function updateBackgroundForPhase(phase) {
+    // Limpar elementos específicos da fase
+    backgroundPlanets = [];
+    backgroundNebulas = [];
+    backgroundAsteroids = [];
+    
+    // Adicionar planetas (2-3 por fase)
+    const planetCount = Math.min(phase, 3);
+    for (let i = 0; i < planetCount; i++) {
+        backgroundPlanets.push(new BackgroundPlanet(phase));
+    }
+    
+    // Adicionar nebulosas (1-2 por fase)
+    const nebulaCount = Math.min(phase, 2);
+    for (let i = 0; i < nebulaCount; i++) {
+        backgroundNebulas.push(new BackgroundNebula(phase));
+    }
+    
+    // Adicionar asteroides decorativos (3-5 por fase)
+    const asteroidCount = Math.min(phase * 2, 5);
+    for (let i = 0; i < asteroidCount; i++) {
+        backgroundAsteroids.push(new BackgroundAsteroid(phase));
+    }
+}
+
+function updateBackground() {
+    // Atualizar estrelas
+    backgroundStars.forEach(star => star.update());
+    
+    // Atualizar planetas
+    backgroundPlanets.forEach(planet => planet.update());
+    
+    // Atualizar nebulosas
+    backgroundNebulas.forEach(nebula => nebula.update());
+    
+    // Atualizar asteroides decorativos
+    backgroundAsteroids.forEach(asteroid => asteroid.update());
+}
+
+function drawBackground() {
+    // Desenhar gradiente de fundo baseado na fase
+    drawBackgroundGradient();
+    
+    // Desenhar nebulosas primeiro (fundo)
+    backgroundNebulas.forEach(nebula => nebula.draw());
+    
+    // Desenhar planetas
+    backgroundPlanets.forEach(planet => planet.draw());
+    
+    // Desenhar asteroides decorativos
+    backgroundAsteroids.forEach(asteroid => asteroid.draw());
+    
+    // Desenhar estrelas por último (frente)
+    backgroundStars.forEach(star => star.draw());
+}
+
+function drawBackgroundGradient() {
+    const phase = gameState.phase;
+    let gradient;
+    
+    // Cores baseadas na fase
+    const phaseColors = [
+        ['#000011', '#001122', '#002244'], // Fase 1 - Azul escuro
+        ['#001100', '#002200', '#004400'], // Fase 2 - Verde escuro
+        ['#110011', '#220022', '#440044'], // Fase 3 - Roxo escuro
+        ['#000011', '#001133', '#002266'], // Fase 4 - Azul profundo
+        ['#110000', '#220000', '#440000']  // Fase 5+ - Vermelho escuro
+    ];
+    
+    const colors = phaseColors[Math.min(phase - 1, 4)];
+    
+    // Criar gradiente radial
+    gradient = ctx.createRadialGradient(
+        canvas.width / 2, canvas.height / 2, 0,
+        canvas.width / 2, canvas.height / 2, Math.max(canvas.width, canvas.height) / 2
+    );
+    
+    gradient.addColorStop(0, colors[0]);
+    gradient.addColorStop(0.5, colors[1]);
+    gradient.addColorStop(1, colors[2]);
+    
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+}
 
 // Inicialização do jogo
 function initGame() {
     ship = new Ship(canvas.width/2 - 15, canvas.height - 50);
     bullets = [];
     asteroids = [];
+    enemyShips = [];
+    enemyBullets = [];
     gameState = {
         running: true,
         paused: false,
@@ -1558,8 +2009,13 @@ function initGame() {
         phase: 1,
         maxLevel: 5,
         scorePerLevel: 100,
-        lastPhaseScore: 0
+        musicWasPlaying: false,
+        lastEnemySpawn: 0
     };
+    
+    // Inicializar fundo dinâmico
+    initBackground();
+    
     updateUI();
     gameOverElement.classList.add('hidden');
     pauseMenuElement.classList.add('hidden');
@@ -1570,6 +2026,14 @@ function pauseGame() {
     if (gameState.running && !gameState.paused) {
         gameState.paused = true;
         pauseMenuElement.classList.remove('hidden');
+        
+        // Pausar música se estiver tocando
+        if (audioManager.musicVolume > 0 && !audioManager.isMuted) {
+            gameState.musicWasPlaying = true;
+            audioManager.stopBackgroundMusic();
+        } else {
+            gameState.musicWasPlaying = false;
+        }
     }
 }
 
@@ -1578,6 +2042,11 @@ function resumeGame() {
     if (gameState.running && gameState.paused) {
         gameState.paused = false;
         pauseMenuElement.classList.add('hidden');
+        
+        // Retomar música se estava tocando antes da pausa
+        if (gameState.musicWasPlaying && !audioManager.isMuted) {
+            audioManager.startBackgroundMusic();
+        }
     }
 }
 
@@ -1935,8 +2404,54 @@ function checkCollisions() {
                 audioManager.play('gameOver');
                 gameOver();
             } else if (result === 'lifeLost') {
-                // Perder vida - resetar pontuação para a fase anterior
-                gameState.score = gameState.lastPhaseScore;
+                // Perder vida - manter pontuação atual (não resetar)
+                updateUI();
+            } else if (result === 'damageTaken' || result === 'shieldBlocked') {
+                updateUI();
+            }
+        }
+    }
+    
+    // Colisões entre balas do jogador e naves inimigas
+    for (let i = bullets.length - 1; i >= 0; i--) {
+        for (let j = enemyShips.length - 1; j >= 0; j--) {
+            if (checkCollision(bullets[i], enemyShips[j])) {
+                // Remover bala
+                bullets.splice(i, 1);
+                
+                // Dano na nave inimiga
+                const destroyed = enemyShips[j].takeDamage(1);
+                if (destroyed) {
+                    // Pontuação baseada no tipo da nave
+                    const points = enemyShips[j].type === 'boss' ? 500 : 100;
+                    gameState.score += points;
+                    
+                    // Tocar som de explosão
+                    audioManager.play('explosion');
+                    
+                    // Remover nave inimiga
+                    enemyShips.splice(j, 1);
+                    updateUI();
+                }
+                break;
+            }
+        }
+    }
+    
+    // Colisões entre balas inimigas e nave do jogador
+    for (let i = enemyBullets.length - 1; i >= 0; i--) {
+        if (checkCollision(enemyBullets[i], ship)) {
+            // Remover bala inimiga
+            enemyBullets.splice(i, 1);
+            
+            // Dano na nave do jogador
+            const result = ship.takeDamage(enemyBullets[i].damage);
+            if (result === 'gameOver') {
+                // Tocar som de game over
+                audioManager.play('gameOver');
+                gameOver();
+            } else if (result === 'lifeLost') {
+                // Perder vida - manter pontuação atual (não resetar)
                 updateUI();
             } else if (result === 'damageTaken' || result === 'shieldBlocked') {
                 updateUI();
@@ -1975,13 +2490,43 @@ function spawnAsteroid() {
     }
 }
 
+// Spawn de naves inimigas (a partir do nível 3)
+function spawnEnemyShips() {
+    // Só spawnar a partir do nível 3
+    if (gameState.level < 3) return;
+    
+    const now = Date.now();
+    const spawnRate = Math.max(8000 - (gameState.level * 1000), 3000); // Diminui com o nível
+    
+    if (now - gameState.lastEnemySpawn > spawnRate) {
+        gameState.lastEnemySpawn = now;
+        
+        // Calcular quantidade baseada no nível e fase
+        let maxEnemies = Math.floor(gameState.level / 3) + Math.floor(gameState.phase / 2);
+        maxEnemies = Math.min(maxEnemies, 3); // Máximo 3 naves por vez
+        
+        // Se já temos muitas naves, não spawnar mais
+        if (enemyShips.length >= maxEnemies) return;
+        
+        // Spawnar nave chefe no final (nível 5, fase 5)
+        if (gameState.level === 5 && gameState.phase === 5 && !enemyShips.some(ship => ship.type === 'boss')) {
+            enemyShips.push(new EnemyShip(canvas.width / 2 - 40, 50, 'boss'));
+        } else {
+            // Spawnar nave inimiga normal
+            const x = Math.random() * (canvas.width - 25);
+            enemyShips.push(new EnemyShip(x, 50, 'normal'));
+        }
+    }
+}
+
 // Loop principal do jogo
 function gameLoop() {
-    // Limpar canvas
-    ctx.fillStyle = '#000011';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    // Desenhar fundo dinâmico (inclui limpeza do canvas)
+    drawBackground();
     
     if (gameState.running && !gameState.paused) {
+        // Atualizar fundo dinâmico
+        updateBackground();
         // Atualizar nave
         ship.update();
         
@@ -2013,8 +2558,39 @@ function gameLoop() {
             }
         }
         
+        // Atualizar naves inimigas
+        for (let i = enemyShips.length - 1; i >= 0; i--) {
+            enemyShips[i].update();
+            enemyShips[i].draw();
+            
+            // Naves inimigas atiram
+            const enemyBullet = enemyShips[i].shoot();
+            if (enemyBullet) {
+                enemyBullets.push(enemyBullet);
+            }
+            
+            // Remover naves inimigas que saíram da tela (exceto boss)
+            if (enemyShips[i].y > canvas.height && enemyShips[i].type !== 'boss') {
+                enemyShips.splice(i, 1);
+            }
+        }
+        
+        // Atualizar balas inimigas
+        for (let i = enemyBullets.length - 1; i >= 0; i--) {
+            enemyBullets[i].update();
+            enemyBullets[i].draw();
+            
+            // Remover balas inimigas que saíram da tela
+            if (enemyBullets[i].y > canvas.height) {
+                enemyBullets.splice(i, 1);
+            }
+        }
+        
         // Spawn de asteroides
         spawnAsteroid();
+        
+        // Spawn de naves inimigas
+        spawnEnemyShips();
         
         // Verificar colisões
         checkCollisions();
@@ -2025,18 +2601,17 @@ function gameLoop() {
             gameState.level = newLevel;
             // Tocar som de nível completo
             audioManager.play('levelComplete');
-            // Salvar pontuação da fase anterior
-            gameState.lastPhaseScore = gameState.score - gameState.scorePerLevel;
         }
         
         // Verificar se passou de fase (todos os níveis completados)
         if (gameState.level > gameState.maxLevel) {
             gameState.phase++;
             gameState.level = 1;
-            gameState.lastPhaseScore = gameState.score;
             // Aumentar dificuldade para próxima fase
             ship.maxHealth = Math.floor(ship.maxHealth * 1.2);
             ship.health = ship.maxHealth;
+            // Atualizar fundo para nova fase
+            updateBackgroundForPhase(gameState.phase);
         }
     }
     
@@ -2347,5 +2922,97 @@ scoreHistory.updateUI();
 
 // Inicializar estado visual dos controles de áudio
 updateMusicButtonState();
+
+// Sistema de modal de informações do jogo
+const infoToggle = document.getElementById('infoToggle');
+const gameInfoModal = document.getElementById('gameInfoModal');
+const closeInfoModal = document.getElementById('closeInfoModal');
+const prevPage = document.getElementById('prevPage');
+const nextPage = document.getElementById('nextPage');
+const pageDots = document.querySelectorAll('.page-dot');
+const infoPages = document.querySelectorAll('.info-page');
+
+let currentInfoPage = 1;
+const totalInfoPages = 4;
+
+// Abrir modal
+infoToggle.addEventListener('click', () => {
+    gameInfoModal.classList.remove('hidden');
+    currentInfoPage = 1;
+    updateInfoPage();
+});
+
+// Fechar modal
+closeInfoModal.addEventListener('click', () => {
+    gameInfoModal.classList.add('hidden');
+});
+
+// Fechar modal clicando fora dele
+gameInfoModal.addEventListener('click', (e) => {
+    if (e.target === gameInfoModal) {
+        gameInfoModal.classList.add('hidden');
+    }
+});
+
+// Navegação entre páginas
+prevPage.addEventListener('click', () => {
+    if (currentInfoPage > 1) {
+        currentInfoPage--;
+        updateInfoPage();
+    }
+});
+
+nextPage.addEventListener('click', () => {
+    if (currentInfoPage < totalInfoPages) {
+        currentInfoPage++;
+        updateInfoPage();
+    }
+});
+
+// Navegação pelos dots
+pageDots.forEach((dot, index) => {
+    dot.addEventListener('click', () => {
+        currentInfoPage = index + 1;
+        updateInfoPage();
+    });
+});
+
+// Atualizar página atual
+function updateInfoPage() {
+    // Esconder todas as páginas
+    infoPages.forEach(page => {
+        page.classList.remove('active');
+    });
+    
+    // Mostrar página atual
+    const currentPage = document.querySelector(`[data-page="${currentInfoPage}"]`);
+    if (currentPage) {
+        currentPage.classList.add('active');
+    }
+    
+    // Atualizar indicadores
+    pageDots.forEach((dot, index) => {
+        dot.classList.toggle('active', index + 1 === currentInfoPage);
+    });
+    
+    // Atualizar botões de navegação
+    prevPage.disabled = currentInfoPage === 1;
+    nextPage.disabled = currentInfoPage === totalInfoPages;
+}
+
+// Navegação por teclado
+document.addEventListener('keydown', (e) => {
+    if (!gameInfoModal.classList.contains('hidden')) {
+        if (e.key === 'ArrowLeft' && currentInfoPage > 1) {
+            currentInfoPage--;
+            updateInfoPage();
+        } else if (e.key === 'ArrowRight' && currentInfoPage < totalInfoPages) {
+            currentInfoPage++;
+            updateInfoPage();
+        } else if (e.key === 'Escape') {
+            gameInfoModal.classList.add('hidden');
+        }
+    }
+});
 
 // A música será iniciada automaticamente na primeira interação do usuário
