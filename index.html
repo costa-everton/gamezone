@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#000011">
+    <title>Nave Espacial vs Asteroides</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+</head>
+<body>
+    <div class="game-container">
+        <!-- Header compacto -->
+        <div class="game-header">
+            <h1>Nave Espacial vs Asteroides</h1>
+            <div class="game-stats">
+                <div class="stat-item">
+                    <span class="stat-icon">⭐</span>
+                    <span class="stat-label">Pontuação</span>
+                    <span class="stat-value" id="score">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-icon">❤️</span>
+                    <span class="stat-label">Vidas</span>
+                    <span class="stat-value" id="lives">3</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-icon">🎯</span>
+                    <span class="stat-label">Nível</span>
+                    <span class="stat-value" id="level">1</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-icon">🚀</span>
+                    <span class="stat-label">Fase</span>
+                    <span class="stat-value" id="phase">1</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="game-main-area">
+            <!-- Painel lateral esquerdo -->
+            <div class="left-panel">
+                <!-- Controles de áudio compactos -->
+                <div class="audio-panel">
+                    <div class="audio-header">
+                        <span class="audio-title">🎵 Áudio</span>
+                        <div class="audio-buttons">
+                            <button id="muteBtn" class="audio-btn" title="Silenciar/Som">🔊</button>
+                            <button id="musicToggleBtn" class="audio-btn" title="Música On/Off">🎵</button>
+                        </div>
+                    </div>
+                    <div class="volume-controls">
+                        <div class="volume-item">
+                            <label>Música</label>
+                            <input type="range" id="musicVolume" min="0" max="100" value="30">
+                            <span id="musicVolumeValue">30%</span>
+                        </div>
+                        <div class="volume-item">
+                            <label>SFX</label>
+                            <input type="range" id="sfxVolume" min="0" max="100" value="50">
+                            <span id="sfxVolumeValue">50%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Histórico de pontuação compacto -->
+                <div class="score-panel">
+                    <div class="score-header">
+                        <span class="score-title">📊 Pontuações</span>
+                        <button id="clearHistoryBtn" class="clear-btn" title="Limpar">🗑️</button>
+                    </div>
+                    <div id="scoreHistory" class="score-history-compact"></div>
+                </div>
+
+                <!-- Instruções compactas -->
+                <div class="instructions-panel">
+                    <div class="instructions-header">
+                        <span class="instructions-title">🎮 Controles</span>
+                    </div>
+                    <div class="instructions-content">
+                        <div class="control-row">
+                            <span class="key">← →</span>
+                            <span class="action">Mover nave</span>
+                        </div>
+                        <div class="control-row">
+                            <span class="key">ESPAÇO</span>
+                            <span class="action">Atirar</span>
+                        </div>
+                        <div class="control-row">
+                            <span class="key">P</span>
+                            <span class="action">Pausar</span>
+                        </div>
+                        <div class="control-row">
+                            <span class="key">R</span>
+                            <span class="action">Reiniciar</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="game-center">
+                <canvas id="gameCanvas" width="800" height="500"></canvas>
+                
+                <!-- Controles Touch para Mobile -->
+                <div class="mobile-controls">
+                    <div class="touch-area left-area" id="leftTouch">
+                        <div class="touch-indicator">←</div>
+                    </div>
+                    <div class="touch-area right-area" id="rightTouch">
+                        <div class="touch-indicator">→</div>
+                    </div>
+                    <div class="touch-area shoot-area" id="shootTouch">
+                        <div class="touch-indicator">⚡</div>
+                    </div>
+                    <div class="touch-area pause-area" id="pauseTouch">
+                        <div class="touch-indicator">⏸️</div>
+                    </div>
+                </div>
+            </div>
+            <div class="ads-container">
+                <!-- Google AdSense - Banner Superior -->
+                <div class="ad-banner-top">
+                    <div class="ad-placeholder">
+                        <p>Anúncio Google</p>
+                        <small>300x250</small>
+                    </div>
+                </div>
+                
+                <!-- Google AdSense - Banner Lateral -->
+                <div class="ad-banner-side">
+                    <div class="ad-placeholder">
+                        <p>Anúncio Google</p>
+                        <small>160x600</small>
+                    </div>
+                </div>
+                
+                <!-- Google AdSense - Banner Inferior -->
+                <div class="ad-banner-bottom">
+                    <div class="ad-placeholder">
+                        <p>Anúncio Google</p>
+                        <small>728x90</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="gameOver" class="game-over hidden">
+            <h2>Game Over!</h2>
+            <p>Pontuação Final: <span id="finalScore">0</span></p>
+            <button id="restartBtn">Jogar Novamente</button>
+        </div>
+        
+        <div id="pauseMenu" class="pause-menu hidden">
+            <h2>Jogo Pausado</h2>
+            <div class="pause-buttons">
+                <button id="resumeBtn" class="pause-btn">Continuar</button>
+                <button id="restartPauseBtn" class="pause-btn">Reiniciar</button>
+                <button id="exitBtn" class="pause-btn">Sair</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>
+

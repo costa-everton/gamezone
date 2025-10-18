@@ -1,0 +1,25 @@
+{
+  "name": "Nave Espacial vs Asteroides",
+  "short_name": "Nave vs Asteroides",
+  "description": "Jogo de nave espacial com asteroides, power-ups e sistema de níveis",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000011",
+  "theme_color": "#00ffff",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTkyIiBoZWlnaHQ9IjE5MiIgdmlld0JveD0iMCAwIDE5MiAxOTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxOTIiIGhlaWdodD0iMTkyIiByeD0iMjQiIGZpbGw9InVybCgjZ3JhZGllbnQwX2xpbmVhcl8xXzEpIi8+CjxwYXRoIGQ9Ik05NiA0OEw4OCA2NEgxMDRMOTYgNDhaIiBmaWxsPSIjRkZGRkZGIi8+CjxwYXRoIGQ9Ik04OCA2NEgxMDRMMTAwIDgwSDkyTDg4IDY0WiIgZmlsbD0iIzAwRkZGRiIvPgo8cGF0aCBkPSJNODggNjRIMTA0TDEwMCA4MEg5Mkw4OCA2NFoiIGZpbGw9InVybCgjZ3JhZGllbnQxX2xpbmVhcl8xXzEpIi8+CjxwYXRoIGQ9Ik05NiAxNDRMMTA0IDEyOEg4OEw5NiAxNDRaIiBmaWxsPSIjRkZGRkZGIi8+CjxwYXRoIGQ9Ik0xMDQgMTI4SDg4TDkyIDExMkgxMDBMMTA0IDEyOFoiIGZpbGw9IiMwMEZGRkYiLz4KPHA+YXRoIGQ9Ik0xMDQgMTI4SDg4TDkyIDExMkgxMDBMMTA0IDEyOFoiIGZpbGw9InVybCgjZ3JhZGllbnQyX2xpbmVhcl8xXzEpIi8+CjxkZWZzPgo8bGluZWFyR3JhZGllbnQgaWQ9ImdyYWRpZW50MF9saW5lYXJfMV8xIiB4MT0iMCIgeTE9IjAiIHgyPSIxOTIiIHkyPSIxOTIiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KPHN0b3Agc3RvcC1jb2xvcj0iIzAwMDAxMSIvPgo8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiMwMEZGRkYiLz4KPC9saW5lYXJHcmFkaWVudD4KPGxpbmVhckdyYWRpZW50IGlkPSJncmFkaWVudDFfbGluZWFyXzFfMSIgeDE9IjAiIHkxPSIwIiB4Mj0iMTYiIHkyPSIxNiIgZ3JhZGllbnRVbml0cz0idXNlclNwYWNlT25Vc2UiPgo8c3RvcCBzdG9wLWNvbG9yPSIjMDBGRkZGIi8+CjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzAwODBGRiIvPgo8L2xpbmVhckdyYWRpZW50Pgo8bGluZWFyR3JhZGllbnQgaWQ9ImdyYWRpZW50Ml9saW5lYXJfMV8xIiB4MT0iMCIgeTE9IjAiIHgyPSIxNiIgeTI9IjE2IiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+CjxzdG9wIHN0b3AtY29sb3I9IiMwMEZGRkYiLz4KPHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjMDA4MEZGIi8+CjwvbGluZWFyR3JhZGllbnQ+CjwvZGVmcz4KPC9zdmc+",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    }
+  ],
+  "categories": ["games", "entertainment"],
+  "lang": "pt-BR"
+}
+
+
+
+
+
+
