@@ -1545,16 +1545,35 @@ class EnemyShip {
     constructor(x, y, type = 'normal') {
         this.x = x;
         this.y = y;
-        this.width = type === 'boss' ? 80 : 25;
-        this.height = type === 'boss' ? 50 : 30;
+        
+        // Definir tamanhos baseados na hierarquia
+        if (type === 'boss') {
+            this.width = 100;
+            this.height = 60;
+            this.health = 30;
+            this.speed = 0.3;
+            this.dx = 1;
+            this.shootInterval = 800;
+        } else if (type === 'general') {
+            this.width = 60;
+            this.height = 40;
+            this.health = 8;
+            this.speed = 0.6;
+            this.dx = 0.8;
+            this.shootInterval = 1200;
+        } else {
+            this.width = 25;
+            this.height = 30;
+            this.health = 2;
+            this.speed = 1;
+            this.dx = (Math.random() - 0.5) * 2;
+            this.shootInterval = 2000;
+        }
+        
         this.type = type;
-        this.speed = type === 'boss' ? 0.5 : 1;
-        this.dx = type === 'boss' ? 1 : (Math.random() - 0.5) * 2;
         this.dy = 0;
-        this.health = type === 'boss' ? 20 : 2;
         this.maxHealth = this.health;
         this.lastShot = 0;
-        this.shootInterval = type === 'boss' ? 1000 : 2000;
         this.direction = Math.random() > 0.5 ? 1 : -1;
         this.oscillation = 0;
         this.oscillationSpeed = 0.02;
@@ -1583,11 +1602,25 @@ class EnemyShip {
         const now = Date.now();
         if (now - this.lastShot > this.shootInterval) {
             this.lastShot = now;
-            return new EnemyBullet(
-                this.x + this.width / 2,
-                this.y + this.height,
-                this.type === 'boss' ? 2 : 1
-            );
+            
+            // Diferentes tipos de tiro baseados na hierarquia
+            if (this.type === 'boss') {
+                // Chefe atira múltiplas balas
+                const bullets = [];
+                bullets.push(new EnemyBullet(this.x + this.width / 2, this.y + this.height, 3));
+                bullets.push(new EnemyBullet(this.x + this.width / 2 - 15, this.y + this.height, 2));
+                bullets.push(new EnemyBullet(this.x + this.width / 2 + 15, this.y + this.height, 2));
+                return bullets;
+            } else if (this.type === 'general') {
+                // General atira duas balas
+                const bullets = [];
+                bullets.push(new EnemyBullet(this.x + this.width / 2, this.y + this.height, 2));
+                bullets.push(new EnemyBullet(this.x + this.width / 2 - 8, this.y + this.height, 1));
+                return bullets;
+            } else {
+                // Soldado comum atira uma bala
+                return new EnemyBullet(this.x + this.width / 2, this.y + this.height, 1);
+            }
         }
         return null;
     }
@@ -1602,40 +1635,323 @@ class EnemyShip {
         ctx.translate(this.x + this.width / 2, this.y + this.height / 2);
         
         if (this.type === 'boss') {
-            // Desenhar nave chefe
-            ctx.fillStyle = '#ff4444';
-            ctx.fillRect(-this.width / 2, -this.height / 2, this.width, this.height);
+            // CHEFE - Maior e mais imponente
+            ctx.beginPath();
             
-            // Detalhes da nave chefe
-            ctx.fillStyle = '#ff6666';
-            ctx.fillRect(-this.width / 2 + 5, -this.height / 2 + 5, this.width - 10, this.height - 10);
+            // Corpo principal em forma de losango alongado
+            ctx.moveTo(0, -this.height / 2);
+            ctx.lineTo(this.width / 2 - 15, -this.height / 4);
+            ctx.lineTo(this.width / 2, 0);
+            ctx.lineTo(this.width / 2 - 15, this.height / 4);
+            ctx.lineTo(0, this.height / 2);
+            ctx.lineTo(-this.width / 2 + 15, this.height / 4);
+            ctx.lineTo(-this.width / 2, 0);
+            ctx.lineTo(-this.width / 2 + 15, -this.height / 4);
+            ctx.closePath();
             
-            // Canhões
-            ctx.fillStyle = '#ff0000';
-            ctx.fillRect(-this.width / 2 + 10, -this.height / 2 - 5, 15, 8);
-            ctx.fillRect(this.width / 2 - 25, -this.height / 2 - 5, 15, 8);
+            // Corpo principal - Vermelho escuro
+            ctx.fillStyle = '#4B0000';
+            ctx.fill();
             
-            // Barra de vida da nave chefe
+            // Detalhes estruturais - Vermelho médio
+            ctx.beginPath();
+            ctx.moveTo(0, -this.height / 2 + 8);
+            ctx.lineTo(this.width / 2 - 20, -this.height / 4 + 5);
+            ctx.lineTo(this.width / 2 - 8, 0);
+            ctx.lineTo(this.width / 2 - 20, this.height / 4 - 5);
+            ctx.lineTo(0, this.height / 2 - 8);
+            ctx.lineTo(-this.width / 2 + 20, this.height / 4 - 5);
+            ctx.lineTo(-this.width / 2 + 8, 0);
+            ctx.lineTo(-this.width / 2 + 20, -this.height / 4 + 5);
+            ctx.closePath();
+            
+            ctx.fillStyle = '#8B0000';
+            ctx.fill();
+            
+            // Placas de armadura - Vermelho intenso
+            ctx.beginPath();
+            ctx.moveTo(0, -this.height / 2 + 15);
+            ctx.lineTo(this.width / 2 - 25, -this.height / 4 + 8);
+            ctx.lineTo(this.width / 2 - 12, 0);
+            ctx.lineTo(this.width / 2 - 25, this.height / 4 - 8);
+            ctx.lineTo(0, this.height / 2 - 15);
+            ctx.lineTo(-this.width / 2 + 25, this.height / 4 - 8);
+            ctx.lineTo(-this.width / 2 + 12, 0);
+            ctx.lineTo(-this.width / 2 + 25, -this.height / 4 + 8);
+            ctx.closePath();
+            
+            ctx.fillStyle = '#DC143C';
+            ctx.fill();
+            
+            // Canhões principais - Maiores
+            ctx.fillStyle = '#2F2F2F';
+            ctx.beginPath();
+            ctx.ellipse(-this.width / 2 + 12, -this.height / 2 - 12, 18, 8, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.ellipse(this.width / 2 - 12, -this.height / 2 - 12, 18, 8, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Bocas dos canhões
+            ctx.fillStyle = '#000000';
+            ctx.beginPath();
+            ctx.ellipse(-this.width / 2 + 12, -this.height / 2 - 8, 12, 6, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.ellipse(this.width / 2 - 12, -this.height / 2 - 8, 12, 6, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Canhões secundários
+            ctx.fillStyle = '#2F2F2F';
+            ctx.beginPath();
+            ctx.ellipse(-this.width / 2 + 20, -this.height / 2 - 5, 8, 4, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.ellipse(this.width / 2 - 20, -this.height / 2 - 5, 8, 4, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Propulsores principais - Maiores
+            ctx.fillStyle = '#FF4500';
+            ctx.beginPath();
+            ctx.ellipse(-this.width / 2 + 12, this.height / 2 + 5, 12, 6, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.ellipse(this.width / 2 - 12, this.height / 2 + 5, 12, 6, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Propulsores secundários
+            ctx.fillStyle = '#FF6347';
+            ctx.beginPath();
+            ctx.ellipse(-this.width / 2 + 25, this.height / 2 + 3, 6, 3, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.ellipse(this.width / 2 - 25, this.height / 2 + 3, 6, 3, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Detalhes de energia - Maiores
+            ctx.fillStyle = '#FFD700';
+            ctx.beginPath();
+            ctx.ellipse(-this.width / 2 + 15, -this.height / 4, 4, 4, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.ellipse(this.width / 2 - 15, -this.height / 4, 4, 4, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Barra de vida do chefe
+            const healthBarWidth = this.width;
+            const healthBarHeight = 10;
+            const healthPercent = this.health / this.maxHealth;
+            
+            // Fundo da barra
+            ctx.fillStyle = '#2F2F2F';
+            ctx.fillRect(-healthBarWidth / 2 - 3, -this.height / 2 - 25, healthBarWidth + 6, healthBarHeight + 6);
+            
+            // Barra de vida
+            ctx.fillStyle = '#DC143C';
+            ctx.fillRect(-healthBarWidth / 2, -this.height / 2 - 22, healthBarWidth, healthBarHeight);
+            ctx.fillStyle = '#00FF00';
+            ctx.fillRect(-healthBarWidth / 2, -this.height / 2 - 22, healthBarWidth * healthPercent, healthBarHeight);
+            
+            // Borda da barra
+            ctx.strokeStyle = '#FFFFFF';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(-healthBarWidth / 2, -this.height / 2 - 22, healthBarWidth, healthBarHeight);
+            
+        } else if (this.type === 'general') {
+            // GENERAL - Tamanho médio, aparência distinta
+            ctx.beginPath();
+            
+            // Corpo principal em forma de losango alongado
+            ctx.moveTo(0, -this.height / 2);
+            ctx.lineTo(this.width / 2 - 8, -this.height / 4);
+            ctx.lineTo(this.width / 2, 0);
+            ctx.lineTo(this.width / 2 - 8, this.height / 4);
+            ctx.lineTo(0, this.height / 2);
+            ctx.lineTo(-this.width / 2 + 8, this.height / 4);
+            ctx.lineTo(-this.width / 2, 0);
+            ctx.lineTo(-this.width / 2 + 8, -this.height / 4);
+            ctx.closePath();
+            
+            // Corpo principal - Azul escuro para diferenciação
+            ctx.fillStyle = '#000080';
+            ctx.fill();
+            
+            // Detalhes estruturais - Azul médio
+            ctx.beginPath();
+            ctx.moveTo(0, -this.height / 2 + 5);
+            ctx.lineTo(this.width / 2 - 12, -this.height / 4 + 3);
+            ctx.lineTo(this.width / 2 - 4, 0);
+            ctx.lineTo(this.width / 2 - 12, this.height / 4 - 3);
+            ctx.lineTo(0, this.height / 2 - 5);
+            ctx.lineTo(-this.width / 2 + 12, this.height / 4 - 3);
+            ctx.lineTo(-this.width / 2 + 4, 0);
+            ctx.lineTo(-this.width / 2 + 12, -this.height / 4 + 3);
+            ctx.closePath();
+            
+            ctx.fillStyle = '#4169E1';
+            ctx.fill();
+            
+            // Placas de armadura - Azul intenso
+            ctx.beginPath();
+            ctx.moveTo(0, -this.height / 2 + 8);
+            ctx.lineTo(this.width / 2 - 15, -this.height / 4 + 4);
+            ctx.lineTo(this.width / 2 - 6, 0);
+            ctx.lineTo(this.width / 2 - 15, this.height / 4 - 4);
+            ctx.lineTo(0, this.height / 2 - 8);
+            ctx.lineTo(-this.width / 2 + 15, this.height / 4 - 4);
+            ctx.lineTo(-this.width / 2 + 6, 0);
+            ctx.lineTo(-this.width / 2 + 15, -this.height / 4 + 4);
+            ctx.closePath();
+            
+            ctx.fillStyle = '#1E90FF';
+            ctx.fill();
+            
+            // Canhões principais - Tamanho médio
+            ctx.fillStyle = '#2F2F2F';
+            ctx.beginPath();
+            ctx.ellipse(-this.width / 2 + 6, -this.height / 2 - 6, 10, 5, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.ellipse(this.width / 2 - 6, -this.height / 2 - 6, 10, 5, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Boca do canhão
+            ctx.fillStyle = '#000000';
+            ctx.beginPath();
+            ctx.ellipse(-this.width / 2 + 6, -this.height / 2 - 4, 6, 3, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.ellipse(this.width / 2 - 6, -this.height / 2 - 4, 6, 3, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Propulsores principais
+            ctx.fillStyle = '#00BFFF';
+            ctx.beginPath();
+            ctx.ellipse(-this.width / 2 + 6, this.height / 2 + 2, 6, 3, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.ellipse(this.width / 2 - 6, this.height / 2 + 2, 6, 3, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Detalhes de energia - Azul
+            ctx.fillStyle = '#00FFFF';
+            ctx.beginPath();
+            ctx.ellipse(-this.width / 2 + 8, -this.height / 4, 3, 3, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.ellipse(this.width / 2 - 8, -this.height / 4, 3, 3, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Barra de vida do general
             const healthBarWidth = this.width;
             const healthBarHeight = 6;
             const healthPercent = this.health / this.maxHealth;
             
-            ctx.fillStyle = '#ff0000';
-            ctx.fillRect(-healthBarWidth / 2, -this.height / 2 - 15, healthBarWidth, healthBarHeight);
-            ctx.fillStyle = '#00ff00';
-            ctx.fillRect(-healthBarWidth / 2, -this.height / 2 - 15, healthBarWidth * healthPercent, healthBarHeight);
+            // Fundo da barra
+            ctx.fillStyle = '#2F2F2F';
+            ctx.fillRect(-healthBarWidth / 2 - 2, -this.height / 2 - 15, healthBarWidth + 4, healthBarHeight + 4);
+            
+            // Barra de vida
+            ctx.fillStyle = '#1E90FF';
+            ctx.fillRect(-healthBarWidth / 2, -this.height / 2 - 13, healthBarWidth, healthBarHeight);
+            ctx.fillStyle = '#00FF00';
+            ctx.fillRect(-healthBarWidth / 2, -this.height / 2 - 13, healthBarWidth * healthPercent, healthBarHeight);
+            
+            // Borda da barra
+            ctx.strokeStyle = '#FFFFFF';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(-healthBarWidth / 2, -this.height / 2 - 13, healthBarWidth, healthBarHeight);
+            
         } else {
-            // Desenhar nave inimiga normal
-            ctx.fillStyle = '#ff6666';
-            ctx.fillRect(-this.width / 2, -this.height / 2, this.width, this.height);
+            // SOLDADO COMUM - Menor e mais simples
+            ctx.beginPath();
             
-            // Detalhes
-            ctx.fillStyle = '#ff4444';
-            ctx.fillRect(-this.width / 2 + 3, -this.height / 2 + 3, this.width - 6, this.height - 6);
+            // Corpo principal em forma de losango
+            ctx.moveTo(0, -this.height / 2);
+            ctx.lineTo(this.width / 2 - 3, -this.height / 4);
+            ctx.lineTo(this.width / 2, 0);
+            ctx.lineTo(this.width / 2 - 3, this.height / 4);
+            ctx.lineTo(0, this.height / 2);
+            ctx.lineTo(-this.width / 2 + 3, this.height / 4);
+            ctx.lineTo(-this.width / 2, 0);
+            ctx.lineTo(-this.width / 2 + 3, -this.height / 4);
+            ctx.closePath();
             
-            // Canhão
-            ctx.fillStyle = '#ff0000';
-            ctx.fillRect(-2, this.height / 2 - 5, 4, 8);
+            // Corpo principal - Vermelho escuro
+            ctx.fillStyle = '#8B0000';
+            ctx.fill();
+            
+            // Detalhes estruturais - Vermelho médio
+            ctx.beginPath();
+            ctx.moveTo(0, -this.height / 2 + 2);
+            ctx.lineTo(this.width / 2 - 5, -this.height / 4 + 1);
+            ctx.lineTo(this.width / 2 - 1, 0);
+            ctx.lineTo(this.width / 2 - 5, this.height / 4 - 1);
+            ctx.lineTo(0, this.height / 2 - 2);
+            ctx.lineTo(-this.width / 2 + 5, this.height / 4 - 1);
+            ctx.lineTo(-this.width / 2 + 1, 0);
+            ctx.lineTo(-this.width / 2 + 5, -this.height / 4 + 1);
+            ctx.closePath();
+            
+            ctx.fillStyle = '#A52A2A';
+            ctx.fill();
+            
+            // Placas de armadura - Vermelho intenso
+            ctx.beginPath();
+            ctx.moveTo(0, -this.height / 2 + 4);
+            ctx.lineTo(this.width / 2 - 7, -this.height / 4 + 2);
+            ctx.lineTo(this.width / 2 - 2, 0);
+            ctx.lineTo(this.width / 2 - 7, this.height / 4 - 2);
+            ctx.lineTo(0, this.height / 2 - 4);
+            ctx.lineTo(-this.width / 2 + 7, this.height / 4 - 2);
+            ctx.lineTo(-this.width / 2 + 2, 0);
+            ctx.lineTo(-this.width / 2 + 7, -this.height / 4 + 2);
+            ctx.closePath();
+            
+            ctx.fillStyle = '#DC143C';
+            ctx.fill();
+            
+            // Canhão principal - Menor
+            ctx.fillStyle = '#2F2F2F';
+            ctx.beginPath();
+            ctx.ellipse(0, this.height / 2 + 3, 2, 4, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Boca do canhão
+            ctx.fillStyle = '#000000';
+            ctx.beginPath();
+            ctx.ellipse(0, this.height / 2 + 4, 1, 2, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Propulsores - Menores
+            ctx.fillStyle = '#FF4500';
+            ctx.beginPath();
+            ctx.ellipse(-this.width / 2 + 3, this.height / 2 + 1, 2, 1, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.ellipse(this.width / 2 - 3, this.height / 2 + 1, 2, 1, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Detalhes de energia - Menores
+            ctx.fillStyle = '#FFD700';
+            ctx.beginPath();
+            ctx.ellipse(-this.width / 2 + 4, -this.height / 4, 1, 1, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.ellipse(this.width / 2 - 4, -this.height / 4, 1, 1, 0, 0, Math.PI * 2);
+            ctx.fill();
         }
         
         ctx.restore();
@@ -1658,12 +1974,21 @@ class EnemyBullet {
     }
 
     draw() {
-        ctx.fillStyle = '#ff4444';
+        // Efeito de energia/plasma
+        ctx.fillStyle = '#FF4500';
         ctx.fillRect(this.x - this.width / 2, this.y, this.width, this.height);
         
-        // Efeito de brilho
-        ctx.fillStyle = '#ff6666';
+        // Núcleo de energia
+        ctx.fillStyle = '#FFD700';
         ctx.fillRect(this.x - this.width / 2 + 1, this.y + 1, this.width - 2, this.height - 2);
+        
+        // Efeito de brilho externo
+        ctx.fillStyle = '#FF6347';
+        ctx.fillRect(this.x - this.width / 2 - 1, this.y - 1, this.width + 2, this.height + 2);
+        
+        // Restaurar o núcleo
+        ctx.fillStyle = '#FFD700';
+        ctx.fillRect(this.x - this.width / 2, this.y, this.width, this.height);
     }
 }
 
@@ -2385,29 +2710,33 @@ function checkCollisions() {
     // Colisão entre nave e asteroides
     for (let i = asteroids.length - 1; i >= 0; i--) {
         if (checkCollision(ship, asteroids[i])) {
-            const damage = asteroids[i].size; // Dano igual ao tamanho do asteroide
-            
             // Verificar se era especial e aplicar power-up
             if (asteroids[i].isSpecial) {
+                // Asteroides especiais (power-ups) não causam dano
                 ship.applyPowerUp(asteroids[i].specialType);
-            }
-            
-            asteroids.splice(i, 1);
-            
-            // Verificar se a nave pode tomar dano
-            // Tocar som de colisão da nave
-            audioManager.play('shipHit');
-            
-            const result = ship.takeDamage(damage);
-            if (result === 'gameOver') {
-                // Tocar som de game over
-                audioManager.play('gameOver');
-                gameOver();
-            } else if (result === 'lifeLost') {
-                // Perder vida - manter pontuação atual (não resetar)
-                updateUI();
-            } else if (result === 'damageTaken' || result === 'shieldBlocked') {
-                updateUI();
+                asteroids.splice(i, 1);
+                // Tocar som de power-up
+                audioManager.play('powerUp');
+            } else {
+                // Asteroides normais causam dano
+                const damage = asteroids[i].size; // Dano igual ao tamanho do asteroide
+                asteroids.splice(i, 1);
+                
+                // Verificar se a nave pode tomar dano
+                // Tocar som de colisão da nave
+                audioManager.play('shipHit');
+                
+                const result = ship.takeDamage(damage);
+                if (result === 'gameOver') {
+                    // Tocar som de game over
+                    audioManager.play('gameOver');
+                    gameOver();
+                } else if (result === 'lifeLost') {
+                    // Perder vida - manter pontuação atual (não resetar)
+                    updateUI();
+                } else if (result === 'damageTaken' || result === 'shieldBlocked') {
+                    updateUI();
+                }
             }
         }
     }
@@ -2423,7 +2752,14 @@ function checkCollisions() {
                 const destroyed = enemyShips[j].takeDamage(1);
                 if (destroyed) {
                     // Pontuação baseada no tipo da nave
-                    const points = enemyShips[j].type === 'boss' ? 500 : 100;
+                    let points = 0;
+                    if (enemyShips[j].type === 'boss') {
+                        points = 1000; // Chefe vale muito
+                    } else if (enemyShips[j].type === 'general') {
+                        points = 300; // General vale médio
+                    } else {
+                        points = 100; // Soldado comum vale pouco
+                    }
                     gameState.score += points;
                     
                     // Tocar som de explosão
@@ -2503,18 +2839,24 @@ function spawnEnemyShips() {
         
         // Calcular quantidade baseada no nível e fase
         let maxEnemies = Math.floor(gameState.level / 3) + Math.floor(gameState.phase / 2);
-        maxEnemies = Math.min(maxEnemies, 3); // Máximo 3 naves por vez
+        maxEnemies = Math.min(maxEnemies, 4); // Máximo 4 naves por vez
         
         // Se já temos muitas naves, não spawnar mais
         if (enemyShips.length >= maxEnemies) return;
         
         // Spawnar nave chefe no final (nível 5, fase 5)
         if (gameState.level === 5 && gameState.phase === 5 && !enemyShips.some(ship => ship.type === 'boss')) {
-            enemyShips.push(new EnemyShip(canvas.width / 2 - 40, 50, 'boss'));
+            enemyShips.push(new EnemyShip(canvas.width / 2 - 50, 50, 'boss'));
         } else {
-            // Spawnar nave inimiga normal
-            const x = Math.random() * (canvas.width - 25);
-            enemyShips.push(new EnemyShip(x, 50, 'normal'));
+            // Spawnar general no final de cada fase (nível 5 de cada fase)
+            if (gameState.level === 5 && !enemyShips.some(ship => ship.type === 'general')) {
+                const x = Math.random() * (canvas.width - 60);
+                enemyShips.push(new EnemyShip(x, 50, 'general'));
+            } else {
+                // Spawnar nave inimiga normal
+                const x = Math.random() * (canvas.width - 25);
+                enemyShips.push(new EnemyShip(x, 50, 'normal'));
+            }
         }
     }
 }
@@ -2564,9 +2906,17 @@ function gameLoop() {
             enemyShips[i].draw();
             
             // Naves inimigas atiram
-            const enemyBullet = enemyShips[i].shoot();
-            if (enemyBullet) {
-                enemyBullets.push(enemyBullet);
+            const newBullets = enemyShips[i].shoot();
+            if (newBullets) {
+                if (Array.isArray(newBullets)) {
+                    // Múltiplas balas (chefe e general)
+                    newBullets.forEach(bullet => {
+                        enemyBullets.push(bullet);
+                    });
+                } else {
+                    // Uma bala (soldado comum)
+                    enemyBullets.push(newBullets);
+                }
             }
             
             // Remover naves inimigas que saíram da tela (exceto boss)
