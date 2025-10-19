@@ -611,7 +611,7 @@ body {
 
 .modal-body {
     padding: 0;
-    max-height: calc(85vh - 100px);
+    max-height: calc(85vh - 120px);
     overflow-y: auto;
     overflow-x: hidden;
     display: flex;
@@ -627,7 +627,7 @@ body {
 .info-page {
     display: none;
     padding: 18px;
-    max-height: calc(85vh - 150px);
+    max-height: calc(85vh - 170px);
     overflow-y: auto;
     overflow-x: hidden;
     animation: pageSlideIn 0.3s ease-out;
@@ -1607,7 +1607,7 @@ canvas {
     }
     
     .info-page {
-        max-height: calc(90vh - 120px); /* Ajustado para mobile */
+        max-height: calc(90vh - 140px); /* Ajustado para mobile */
     }
     
     .modal-header {

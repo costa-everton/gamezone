@@ -651,7 +651,8 @@ class Ship {
                 'damage': '💥',
                 'speed': '⚡',
                 'shield': '🛡️',
-                'health': '❤️'
+                'health': '❤️',
+                'extraLife': '⭐'
             };
             
             ctx.fillText(icons[effect.type] || '?', effect.x, effect.y - 40);
@@ -774,6 +775,11 @@ class Ship {
                 // Saúde - restaura vida
                 this.health = Math.min(this.maxHealth, this.health + 5);
                 this.addPowerUpEffect('health', 60);
+                break;
+            case 'extraLife':
+                // Vida extra - adiciona uma vida completa
+                this.lives = Math.min(this.maxLives, this.lives + 1);
+                this.addPowerUpEffect('extraLife', 120);
                 break;
         }
     }
@@ -926,8 +932,20 @@ class Asteroid {
     }
 
     getRandomSpecialType() {
-        const types = ['damage', 'fuel', 'shield', 'health'];
-        return types[Math.floor(Math.random() * types.length)];
+        // Probabilidades para diferentes power-ups
+        const random = Math.random();
+        
+        if (random < 0.05) { // 5% - Vida extra (esporádico)
+            return 'extraLife';
+        } else if (random < 0.25) { // 20% - Dano
+            return 'damage';
+        } else if (random < 0.45) { // 20% - Combustível
+            return 'fuel';
+        } else if (random < 0.65) { // 20% - Escudo
+            return 'shield';
+        } else { // 30% - Saúde
+            return 'health';
+        }
     }
 
     generateVertices() {
