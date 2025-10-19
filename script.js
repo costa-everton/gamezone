@@ -2971,8 +2971,11 @@ function gameLoop() {
             audioManager.play('levelComplete');
         }
         
-        // Verificar se passou de fase (todos os níveis completados)
-        if (gameState.level > gameState.maxLevel) {
+        // Verificar se passou de fase (completou todos os 5 níveis)
+        const currentPhaseScore = (gameState.phase - 1) * (gameState.maxLevel * gameState.scorePerLevel);
+        const nextPhaseScore = gameState.phase * (gameState.maxLevel * gameState.scorePerLevel);
+        
+        if (gameState.score >= nextPhaseScore) {
             gameState.phase++;
             gameState.level = 1;
             // Aumentar dificuldade para próxima fase
@@ -2980,6 +2983,8 @@ function gameLoop() {
             ship.health = ship.maxHealth;
             // Atualizar fundo para nova fase
             updateBackgroundForPhase(gameState.phase);
+            // Tocar som de fase completa
+            audioManager.play('levelComplete');
         }
     }
     
