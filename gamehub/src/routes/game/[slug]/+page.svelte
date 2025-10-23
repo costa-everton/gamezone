@@ -1,28 +1,53 @@
 <script>
   import { onMount } from 'svelte';
   import { page } from '$app/stores';
-  import { getGameBySlug, games } from '$lib/utils/games.js';
+  import { gamesService } from '$lib/services/api.js';
   import { goto } from '$app/navigation';
   
   let game = null;
   let gameLoaded = false;
   let gameError = false;
+  let loading = true;
+  let error = null;
+  let relatedGames = [];
   
-  $: {
-    const slug = $page.params.slug;
-    game = getGameBySlug(slug);
-    
-    if (!game) {
-      // Redirect to 404 or home if game not found
-      goto('/');
+  onMount(async () => {
+    try {
+      loading = true;
+      error = null;
+      
+      const slug = $page.params.slug;
+      const response = await gamesService.getGameBySlug(slug);
+      
+      if (response.success && response.data) {
+        game = response.data;
+        
+        // Carregar jogos relacionados
+        const relatedResponse = await gamesService.getGames({
+          category: game.category,
+          limit: 4
+        });
+        
+        if (relatedResponse.success) {
+          relatedGames = relatedResponse.data.filter(g => g.slug !== slug);
+        }
+        
+        // Simular carregamento do jogo
+        setTimeout(() => {
+          gameLoaded = true;
+        }, 1000);
+        
+      } else {
+        throw new Error(response.message || 'Jogo não encontrado');
+      }
+      
+    } catch (err) {
+      console.error('Erro ao carregar jogo:', err);
+      error = err.message || 'Erro ao carregar jogo';
+      gameError = true;
+    } finally {
+      loading = false;
     }
-  }
-  
-  onMount(() => {
-    // Simulate game loading
-    setTimeout(() => {
-      gameLoaded = true;
-    }, 1000);
   });
   
   function handlePlayAgain() {
@@ -52,7 +77,32 @@
   <meta name="description" content={game?.description || 'Jogue online no GameHub'} />
 </svelte:head>
 
-{#if game}
+{#if loading}
+  <!-- Loading State -->
+  <div class="min-h-screen flex items-center justify-center">
+    <div class="text-center">
+      <div class="w-16 h-16 border-4 border-accent-blue border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+      <p class="text-text-primary font-medium">Carregando jogo...</p>
+    </div>
+  </div>
+{:else if error}
+  <!-- Error State -->
+  <div class="min-h-screen flex items-center justify-center">
+    <div class="text-center">
+      <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+        <span class="text-2xl">⚠️</span>
+      </div>
+      <h3 class="text-xl font-semibold text-text-primary mb-2">Erro ao carregar jogo</h3>
+      <p class="text-text-secondary mb-4">{error}</p>
+      <button 
+        on:click={() => goto('/')} 
+        class="btn-primary"
+      >
+        Voltar ao Início
+      </button>
+    </div>
+  </div>
+{:else if game}
   <!-- Header -->
   <div class="relative bg-gradient-to-r from-accent-blue/10 to-accent-aqua/10 py-16">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -77,7 +127,7 @@
                 Destaque
               </span>
             {/if}
-            {#if game.new}
+            {#if game.isNew}
               <span class="bg-accent-aqua text-bg-primary text-sm font-semibold px-3 py-1 rounded-full">
                 Novo
               </span>
@@ -90,7 +140,7 @@
           </h1>
           
           <p class="text-lg text-text-secondary leading-relaxed">
-            {game.description}
+            {game.shortDescription}
           </p>
           
           <!-- Game Stats -->
@@ -240,7 +290,7 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <h2 class="text-2xl font-bold text-text-primary mb-8 text-center">Jogos Relacionados</h2>
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {#each games.filter(g => g.category === game.category && g.id !== game.id).slice(0, 3) as relatedGame}
+        {#each relatedGames.slice(0, 3) as relatedGame}
           <div class="card bg-bg-primary/50 rounded-xl p-6 border border-accent-blue/20 hover:border-accent-blue/40 transition-all duration-300">
             <div class="aspect-video bg-gradient-to-br from-accent-blue/20 to-accent-aqua/20 rounded-lg mb-4 flex items-center justify-center">
               <span class="text-2xl">🎮</span>
@@ -256,14 +306,6 @@
           </div>
         {/each}
       </div>
-    </div>
-  </div>
-{:else}
-  <!-- Loading or Error State -->
-  <div class="min-h-screen flex items-center justify-center">
-    <div class="text-center">
-      <div class="w-16 h-16 border-4 border-accent-blue border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-      <p class="text-text-primary font-medium">Carregando jogo...</p>
     </div>
   </div>
 {/if}

@@ -3,12 +3,16 @@
   import GameGrid from '$lib/components/GameGrid.svelte';
   import GameCard from '$lib/components/GameCard.svelte';
   import AuthButtons from '$lib/components/AuthButtons.svelte';
-  import { games, categories, getFeaturedGames, getNewGames } from '$lib/utils/games.js';
+  import { gamesService } from '$lib/services/api.js';
   import { user } from '$lib/stores/auth.js';
   
   let selectedCategory = 'all';
   let searchQuery = '';
-  let filteredGames = games;
+  let games = [];
+  let categories = [];
+  let filteredGames = [];
+  let loading = true;
+  let error = null;
   
   
   const sponsorAds = [
@@ -41,11 +45,12 @@
     }
   ];
   
-  $: {
+  // Função para filtrar jogos
+  function filterGames() {
     if (searchQuery) {
       filteredGames = games.filter(game => 
         game.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        game.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        game.shortDescription.toLowerCase().includes(searchQuery.toLowerCase()) ||
         game.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
       );
     } else if (selectedCategory === 'all') {
@@ -54,11 +59,65 @@
       filteredGames = games.filter(game => game.category === selectedCategory);
     }
   }
+
+  // Reagir às mudanças
+  $: filterGames();
   
   function handleCategoryChange(category) {
     selectedCategory = category;
     searchQuery = '';
   }
+
+  // Carregar dados da API
+  onMount(async () => {
+    try {
+      loading = true;
+      error = null;
+
+      // Carregar jogos e categorias em paralelo
+      const [gamesResponse, categoriesResponse] = await Promise.all([
+        gamesService.getGames(),
+        gamesService.getCategories()
+      ]);
+
+      if (gamesResponse.success) {
+        games = gamesResponse.data || [];
+        filteredGames = games;
+      } else {
+        throw new Error(gamesResponse.message || 'Erro ao carregar jogos');
+      }
+
+      if (categoriesResponse.success) {
+        categories = categoriesResponse.data || [];
+      } else {
+        console.warn('Erro ao carregar categorias:', categoriesResponse.message);
+        // Usar categorias padrão se a API falhar
+        categories = [
+          { name: 'Ação', slug: 'acao' },
+          { name: 'Estratégia', slug: 'estrategia' },
+          { name: 'Puzzle', slug: 'puzzle' },
+          { name: 'Corrida', slug: 'corrida' },
+          { name: 'Aventura', slug: 'aventura' }
+        ];
+      }
+
+    } catch (err) {
+      console.error('Erro ao carregar dados:', err);
+      error = err.message || 'Erro ao carregar dados';
+      
+      // Usar dados de fallback
+      games = [];
+      categories = [
+        { name: 'Ação', slug: 'acao' },
+        { name: 'Estratégia', slug: 'estrategia' },
+        { name: 'Puzzle', slug: 'puzzle' },
+        { name: 'Corrida', slug: 'corrida' },
+        { name: 'Aventura', slug: 'aventura' }
+      ];
+    } finally {
+      loading = false;
+    }
+  });
   
   function handleSearch() {
     // Search is handled reactively above
@@ -233,23 +292,51 @@
       </div>
     </div>
     
-    <!-- Games Grid -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-      {#each filteredGames as game (game.id)}
-        <div>
-          <GameCard {game} featured={game.featured} />
-        </div>
-      {/each}
-    </div>
-    
-    {#if filteredGames.length === 0}
+    <!-- Loading State -->
+    {#if loading}
       <div class="text-center py-12">
         <div class="w-16 h-16 bg-accent-blue/10 rounded-full flex items-center justify-center mx-auto mb-4">
-          <span class="text-2xl">🔍</span>
+          <svg class="w-8 h-8 text-accent-blue animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+          </svg>
         </div>
-        <h3 class="text-xl font-semibold text-text-primary mb-2">Nenhum jogo encontrado</h3>
-        <p class="text-text-secondary">Tente ajustar os filtros ou explore outras categorias.</p>
+        <h3 class="text-xl font-semibold text-text-primary mb-2">Carregando jogos...</h3>
+        <p class="text-text-secondary">Aguarde enquanto buscamos os melhores jogos para você.</p>
       </div>
+    {:else if error}
+      <!-- Error State -->
+      <div class="text-center py-12">
+        <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <span class="text-2xl">⚠️</span>
+        </div>
+        <h3 class="text-xl font-semibold text-text-primary mb-2">Erro ao carregar jogos</h3>
+        <p class="text-text-secondary mb-4">{error}</p>
+        <button 
+          on:click={() => window.location.reload()} 
+          class="btn-primary"
+        >
+          Tentar Novamente
+        </button>
+      </div>
+    {:else}
+      <!-- Games Grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {#each filteredGames as game (game.id)}
+          <div>
+            <GameCard {game} featured={game.featured} />
+          </div>
+        {/each}
+      </div>
+      
+      {#if filteredGames.length === 0}
+        <div class="text-center py-12">
+          <div class="w-16 h-16 bg-accent-blue/10 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span class="text-2xl">🔍</span>
+          </div>
+          <h3 class="text-xl font-semibold text-text-primary mb-2">Nenhum jogo encontrado</h3>
+          <p class="text-text-secondary">Tente ajustar os filtros ou explore outras categorias.</p>
+        </div>
+      {/if}
     {/if}
   </div>
 </section>

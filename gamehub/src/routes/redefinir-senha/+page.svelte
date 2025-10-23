@@ -31,18 +31,20 @@
   async function validateToken(token) {
     loading = true;
     try {
-      // Simulação de verificação de token
-      // Em uma aplicação real, você faria uma chamada para a API
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Simular token válido se não estiver vazio
-      isValidToken = token && token.length > 10;
-      
-      if (!isValidToken) {
-        authError.set('Token inválido ou expirado. Solicite um novo link de redefinição.');
+      // Verificar se o token tem formato válido
+      if (!token || token.length < 10) {
+        isValidToken = false;
+        authError.set('Token inválido. Solicite um novo link de redefinição.');
+        return;
       }
+      
+      // Por enquanto, considerar token válido se tiver formato correto
+      // Em produção, você faria uma chamada para a API para verificar
+      isValidToken = true;
+      
     } catch (error) {
       authError.set('Erro ao verificar token. Tente novamente.');
+      isValidToken = false;
     } finally {
       loading = false;
     }
@@ -53,6 +55,7 @@
     
     if (type === 'reset-password') {
       const success = await authActions.resetPassword(token, data.password);
+      
       if (success) {
         // Redirecionar para login após sucesso
         setTimeout(() => {

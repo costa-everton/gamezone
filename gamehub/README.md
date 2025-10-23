@@ -158,3 +158,15 @@ Contribuições são bem-vindas! Sinta-se à vontade para:
 ---
 
 Feito com ❤️ para a comunidade gamer
+
+## Comandos simples para rodar todo o projeto
+### API
+```bash
+  cd C:\Users\user\gamezone\api
+  node simple-server.js
+```
+### Frontend
+```bash
+  cd C:\Users\user\gamezone\gamehub
+  npm run dev
+```

@@ -1,4 +1,5 @@
 import { writable } from 'svelte/store';
+import { authService } from '../services/api.js';
 
 // Estado inicial do usuário
 const initialUser = {
@@ -30,39 +31,33 @@ export const authActions = {
     authError.set(null);
     
     try {
-      // Simulação de API - substitua pela sua API real
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password })
-      });
+      console.log('🔐 Tentando login com:', { email, password: '***' });
+      const response = await authService.login(email, password);
+      console.log('📡 Resposta da API:', response);
       
-      if (!response.ok) {
-        throw new Error('Credenciais inválidas');
+      if (response.success && response.data) {
+        const userData = response.data.user;
+        
+        // Atualizar estado do usuário
+        user.set({
+          id: userData.id,
+          email: userData.email,
+          name: userData.name,
+          avatar: userData.avatar,
+          isAuthenticated: true,
+          role: userData.isAdmin ? 'admin' : 'user'
+        });
+        
+        // Salvar dados no localStorage
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('user', JSON.stringify(userData));
+        }
+        
+        authSuccess.set('Login realizado com sucesso!');
+        return true;
+      } else {
+        throw new Error(response.message || 'Credenciais inválidas');
       }
-      
-      const userData = await response.json();
-      
-      // Atualizar estado do usuário
-      user.set({
-        id: userData.id,
-        email: userData.email,
-        name: userData.name,
-        avatar: userData.avatar,
-        isAuthenticated: true,
-        role: userData.role || 'user'
-      });
-      
-      // Salvar token no localStorage
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('authToken', userData.token);
-        localStorage.setItem('user', JSON.stringify(userData));
-      }
-      
-      authSuccess.set('Login realizado com sucesso!');
-      return true;
       
     } catch (error) {
       authError.set(error.message);
@@ -78,39 +73,35 @@ export const authActions = {
     authError.set(null);
     
     try {
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(userData)
-      });
+      const response = await authService.register(
+        userData.name, 
+        userData.email, 
+        userData.password
+      );
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Erro ao criar conta');
+      if (response.success && response.data) {
+        const newUser = response.data.user;
+        
+        // Atualizar estado do usuário
+        user.set({
+          id: newUser.id,
+          email: newUser.email,
+          name: newUser.name,
+          avatar: newUser.avatar,
+          isAuthenticated: true,
+          role: newUser.isAdmin ? 'admin' : 'user'
+        });
+        
+        // Salvar dados no localStorage
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('user', JSON.stringify(newUser));
+        }
+        
+        authSuccess.set('Conta criada com sucesso!');
+        return true;
+      } else {
+        throw new Error(response.message || 'Erro ao criar conta');
       }
-      
-      const newUser = await response.json();
-      
-      // Atualizar estado do usuário
-      user.set({
-        id: newUser.id,
-        email: newUser.email,
-        name: newUser.name,
-        avatar: newUser.avatar,
-        isAuthenticated: true,
-        role: newUser.role || 'user'
-      });
-      
-      // Salvar token no localStorage
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('authToken', newUser.token);
-        localStorage.setItem('user', JSON.stringify(newUser));
-      }
-      
-      authSuccess.set('Conta criada com sucesso!');
-      return true;
       
     } catch (error) {
       authError.set(error.message);
@@ -126,21 +117,14 @@ export const authActions = {
     authError.set(null);
     
     try {
-      const response = await fetch('/api/auth/forgot-password', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email })
-      });
+      const response = await authService.forgotPassword(email);
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Erro ao enviar email');
+      if (response.success) {
+        authSuccess.set('Email de redefinição enviado! Verifique sua caixa de entrada.');
+        return true;
+      } else {
+        throw new Error(response.message || 'Erro ao enviar email');
       }
-      
-      authSuccess.set('Email de redefinição enviado! Verifique sua caixa de entrada.');
-      return true;
       
     } catch (error) {
       authError.set(error.message);
@@ -156,21 +140,14 @@ export const authActions = {
     authError.set(null);
     
     try {
-      const response = await fetch('/api/auth/reset-password', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ token, password: newPassword })
-      });
+      const response = await authService.resetPassword(token, newPassword);
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Erro ao redefinir senha');
+      if (response.success) {
+        authSuccess.set('Senha redefinida com sucesso!');
+        return true;
+      } else {
+        throw new Error(response.message || 'Erro ao redefinir senha');
       }
-      
-      authSuccess.set('Senha redefinida com sucesso!');
-      return true;
       
     } catch (error) {
       authError.set(error.message);
@@ -181,24 +158,24 @@ export const authActions = {
   },
   
   // Logout
-  logout() {
-    user.set(initialUser);
-    authError.set(null);
-    authSuccess.set(null);
-    
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('user');
+  async logout() {
+    try {
+      await authService.logout();
+    } catch (error) {
+      console.error('Erro ao fazer logout:', error);
+    } finally {
+      user.set(initialUser);
+      authError.set(null);
+      authSuccess.set(null);
     }
   },
   
   // Verificar se usuário está logado
   checkAuth() {
     if (typeof window !== 'undefined') {
-      const token = localStorage.getItem('authToken');
       const userData = localStorage.getItem('user');
       
-      if (token && userData) {
+      if (userData && authService.isAuthenticated()) {
         try {
           const parsedUser = JSON.parse(userData);
           user.set({
