@@ -1,0 +1,94 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  password  String
+  avatar    String?
+  isActive  Boolean  @default(true)
+  isAdmin   Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relacionamentos
+  favorites GameFavorite[]
+  playSessions PlaySession[]
+
+  @@map("users")
+}
+
+model Game {
+  id              String   @id @default(cuid())
+  title           String
+  slug            String   @unique
+  description     String
+  shortDescription String
+  category        String
+  image           String
+  rating          Float    @default(0)
+  players         Int      @default(0)
+  difficulty      String
+  playTime        String
+  tags            String[]
+  featured        Boolean  @default(false)
+  isNew           Boolean  @default(false)
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relacionamentos
+  favorites GameFavorite[]
+  playSessions PlaySession[]
+
+  @@map("games")
+}
+
+model GameFavorite {
+  id     String @id @default(cuid())
+  userId String
+  gameId String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  game Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, gameId])
+  @@map("game_favorites")
+}
+
+model PlaySession {
+  id        String   @id @default(cuid())
+  userId    String
+  gameId    String
+  duration  Int      // em minutos
+  score     Int?
+  completed Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  game Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  @@map("play_sessions")
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("categories")
+}
