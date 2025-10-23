@@ -1,0 +1,173 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-bg: #0A0F1C;
+  --color-accent: #00B3FF;
+  --color-aqua: #14FFEC;
+  --color-text: #E6E6E6;
+  --color-text-secondary: #999999;
+  --radius: 12px;
+  --transition: 0.3s ease-in-out;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Inter', 'Poppins', 'Outfit', sans-serif;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+/* Modal de Doação - Prioridade Absoluta */
+.donation-modal,
+.donation-modal * {
+  z-index: 2147483647 !important;
+}
+
+.donation-modal-overlay {
+  z-index: 2147483646 !important;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(10, 15, 28, 0.5);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-accent);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-aqua);
+}
+
+/* Glass morphism effect */
+.glass {
+  background: rgba(10, 15, 28, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(0, 179, 255, 0.1);
+}
+
+/* Card hover effects */
+.card {
+  transition: all var(--transition);
+}
+
+.card:hover {
+  transform: scale(1.03);
+  box-shadow: 0 6px 16px rgba(0, 179, 255, 0.2);
+}
+
+/* Button styles */
+.btn-primary {
+  background: linear-gradient(to right, var(--color-accent), var(--color-aqua));
+  color: var(--color-bg);
+  font-weight: 600;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  transition: all 0.3s ease;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.btn-primary:hover {
+  box-shadow: 0 10px 25px rgba(0, 179, 255, 0.25);
+  transform: scale(1.05);
+}
+
+.btn-secondary {
+  border: 1px solid var(--color-accent);
+  color: var(--color-accent);
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  transition: all 0.3s ease;
+  background: transparent;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.btn-secondary:hover {
+  background: var(--color-accent);
+  color: var(--color-bg);
+  transform: scale(1.05);
+}
+
+/* Text gradients */
+.text-gradient {
+  background: linear-gradient(135deg, var(--color-accent), var(--color-aqua));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Glow effects */
+.glow-blue {
+  box-shadow: 0 4px 12px rgba(0, 179, 255, 0.15);
+}
+
+.glow-aqua {
+  box-shadow: 0 4px 12px rgba(20, 255, 236, 0.15);
+}
+
+/* Animations */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+.float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Responsive typography */
+h1 {
+  font-size: clamp(1.5rem, 2vw, 2.5rem);
+  font-weight: 700;
+}
+
+h2 {
+  font-size: clamp(1.25rem, 1.5vw, 1.75rem);
+  font-weight: 600;
+}
+
+h3 {
+  font-size: clamp(1rem, 1.25vw, 1.25rem);
+  font-weight: 600;
+}
+
+p {
+  font-size: clamp(0.9rem, 1vw, 1rem);
+  font-weight: 400;
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+  .card:hover {
+    transform: none;
+  }
+  
+  .btn-primary:hover,
+  .btn-secondary:hover {
+    transform: none;
+  }
+}
